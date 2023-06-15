@@ -1,0 +1,12 @@
+[package]
+name = "min-bls"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+miracl_core_bls12381 = "4.2.2"
+mcl_rust = { git = "https://github.com/rupansh/mcl-rust", branch = "dev" }
+rand = "0.8.4"
+hex = "0.4.3"
