@@ -1,5 +1,5 @@
 use mcl_rust::{G1, G2, GT};
-use miracl_core_bls12381::bls12381::{ecp2::ECP2, ecp::ECP, big::{BIG, self}, pair::{g1mul, g2mul}, bls};
+use miracl_core_bls12381::bls12381::{ecp2::ECP2, ecp::ECP, big::{BIG, self}, pair::{g1mul, g2mul}, bls, fp2::FP2};
 use rand::Rng;
 
 pub fn keypair_from_seed(ikm: &[u8; 32]) -> (BIG, ECP2) {
@@ -55,15 +55,41 @@ fn g1_rev(gp1: &G1) -> ECP {
     ECP::new_bigs(x, y)
 }
 
+fn mx_gen() -> (G2, ECP2) {
+    let raw = "1 2345388737500083945391657505708625859903954047151773287623537600586029428359739211026111121073980842558223033704140 3558041178357727243543283929018475959655787667816024413880422701270944718005964809191925861299660390662341819212979 1111454484298065649047920916747797835589661734985194316226909186591481448224600088430816898704234962594609579273169 3988173108836042169913782128392219399166696378042311135661652175544044220584995583525611110036064603671142074680982";
+    let mcgen = G2::from_str(raw, 10).unwrap();
+    let rawhex = mcgen.get_str(16);
+
+    let mut sraw = rawhex.split(" ");
+    let _ = sraw.next().unwrap();
+    let rxa = sraw.next().unwrap().to_uppercase();
+    let rxb = sraw.next().unwrap().to_uppercase();
+    let rya = sraw.next().unwrap().to_uppercase();
+    let ryb = sraw.next().unwrap().to_uppercase();
+
+    let xa = &BIG::fromstring(rxa);
+    let xb = &BIG::fromstring(rxb);
+    let ya = &BIG::fromstring(rya);
+    let yb = &BIG::fromstring(ryb);
+
+    let x = FP2::new_bigs(xa, xb);
+    let y = FP2::new_bigs(ya, yb);
+
+    let gen = ECP2::new_fp2s(&x, &y);
+
+    (mcgen, gen)
+}
+
 fn main() {
     mcl_rust::init(mcl_rust::CurveType::BLS12_381);
-    // set mode to MCL_MAP_TO_MODE_HASH_TO_CURVE
-    //unsafe { mcl_rust::mclBn_setMapToMode(5) };
+
+    // generator
+    let (mut mcgen, gen) = mx_gen();
 
     // keygen
     let seed = rand::thread_rng().gen::<[u8; 32]>();
     let (sk, _) = keypair_from_seed(&seed);
-    let pk = g2mul(&ECP2::generator(), &sk);
+    let pk = g2mul(&gen, &sk);
     let mut mcpk = conv_gp2(pk);
 
     let data: &[u8; 32] = b"test1234567890345689231test12339";
@@ -83,7 +109,6 @@ fn main() {
     println!("msg {}", hex::encode(data));
 
     // verify
-    let mut mcgen = conv_gp2(ECP2::generator());
     let mut gt1 = unsafe { GT::uninit() };
     let mut gt2 = unsafe { GT::uninit() };
     mcl_rust::pairing(&mut gt1, &mut datag1, &mut mcpk);

@@ -7,6 +7,6 @@ edition = "2021"
 
 [dependencies]
 miracl_core_bls12381 = "4.2.2"
-mcl_rust = { git = "https://github.com/rupansh/mcl-rust", branch = "dev" }
+mcl_rust = { git = "https://github.com/herumi/mcl-rust", branch = "dev" }
 rand = "0.8.4"
 hex = "0.4.3"
